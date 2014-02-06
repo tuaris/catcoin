@@ -20,6 +20,10 @@ This is the original Catcoin, and not the forked version of 1/4/2014.  Catcoin i
 For more information, as well as an immediately useable, binary version of
 the Catcoin client sofware, see http://www.unibia.com/unibianet/freebsd/install-catcoin-freebsd.
 
+A working node is avialable at:
+
+63.247.147.163:9933
+
 License
 -------
 

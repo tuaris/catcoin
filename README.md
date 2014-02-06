@@ -1,7 +1,7 @@
 Catcoin integration/staging tree
 ================================
 
-http://www.catcoin.pw
+http://www.unibia.com/unibianet/freebsd/install-catcoin-freebsd
 
 Copyright (c) 2009-2013 Bitcoin Developers
 Copyright (c) 2011-2013 Litecoin Developers
@@ -10,16 +10,15 @@ Copyright (c) 2013-2014 Catcoin Developers
 What is Catcoin?
 ----------------
 
-Catcoin is a cat version of Litecoin using scrypt as a proof-of-work algorithm but using the same
-blockchain parameters as Bitcoin:
+This is the original Catcoin, and not the forked version of 1/4/2014.  Catcoin is a cat version of Litecoin using scrypt as a proof-of-work algorithm but using the same blockchain parameters as Bitcoin:
  - 50 coins per block
  - 10 minutes block targets
  - Subsidy halves in 210k blocks
  - 21 million total coins
- - 36 blocks to retarget difficulty
+ - 2016 blocks to retarget difficulty
 
 For more information, as well as an immediately useable, binary version of
-the Catcoin client sofware, see http://www.catcoin.pw.
+the Catcoin client sofware, see http://www.unibia.com/unibianet/freebsd/install-catcoin-freebsd.
 
 License
 -------

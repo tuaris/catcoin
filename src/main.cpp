@@ -1072,18 +1072,15 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
     return nSubsidy + nFees;
 }
 
-static const int64 nTargetTimespan = 6 * 60 * 60; // 6 hours
+static const int64 nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
 static const int64 nTargetSpacing = 10 * 60;
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
-
-static const int64 nTargetTimespanOld = 14 * 24 * 60 * 60; // two weeks
-static const int64 nIntervalOld = nTargetTimespanOld / nTargetSpacing;
 
 //
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64 nTime, int height)
+unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
 {
     // Testnet has min-difficulty blocks
     // after nTargetSpacing*2 time between blocks:
@@ -1097,10 +1094,7 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime, int height)
         // Maximum 400% adjustment...
         bnResult *= 4;
         // ... in best-case exactly 4-times-normal target time
-        if(height < 20290)
-            nTime -= nTargetTimespanOld*4;
-        else
-            nTime -= nTargetTimespan*4;
+		nTime -= nTargetTimespan*4;
     }
     if (bnResult > bnProofOfWorkLimit)
         bnResult = bnProofOfWorkLimit;
@@ -1109,35 +1103,14 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime, int height)
 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
-    int64 nTargetTimespanLocal = 0;
-    int64 nIntervalLocal = 0;
-    int forkBlock = 20290 - 1;
-
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
 
     // Genesis block
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
 
-    // Starting from block 20,290 the network diff was set to 16
-    // and the retarget interval was changed to 36
-	if(pindexLast->nHeight < forkBlock) {
-        nTargetTimespanLocal = nTargetTimespanOld;
-        nIntervalLocal = nIntervalOld;
-    } else if(pindexLast->nHeight == forkBlock) {
-        CBigNum bnNew;
-        bnNew.SetCompact(0x1c0ffff0); // Difficulty 16
-        printf("GetNextWorkRequired RETARGET (fork at block 20290)\n");
-        printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
-        printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
-        return bnNew.GetCompact();
-    } else {
-        nTargetTimespanLocal = nTargetTimespan;
-        nIntervalLocal = nInterval;
-    }
-
     // Only change once per interval
-    if ((pindexLast->nHeight+1) % nIntervalLocal != 0)
+    if ((pindexLast->nHeight+1) % nInterval != 0)
     {
         // Special difficulty rule for testnet:
         if (fTestNet)
@@ -1150,7 +1123,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
             {
                 // Return the last non-special-min-difficulty-rules-block
                 const CBlockIndex* pindex = pindexLast;
-                while (pindex->pprev && pindex->nHeight % nIntervalLocal != 0 && pindex->nBits == nProofOfWorkLimit)
+                while (pindex->pprev && pindex->nHeight % nInterval != 0 && pindex->nBits == nProofOfWorkLimit)
                     pindex = pindex->pprev;
                 return pindex->nBits;
             }
@@ -1161,9 +1134,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
     // Catcoin: This fixes an issue where a 51% attack can change difficulty at will.
     // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-    int blockstogoback = nIntervalLocal-1;
-    if ((pindexLast->nHeight+1) != nIntervalLocal)
-        blockstogoback = nIntervalLocal;
+    int blockstogoback = nInterval-1;
+    if ((pindexLast->nHeight+1) != nInterval)
+        blockstogoback = nInterval;
 
     // Go back by what we want to be 14 days worth of blocks
     const CBlockIndex* pindexFirst = pindexLast;
@@ -1174,23 +1147,23 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     // Limit adjustment step
     int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
     printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
-    if (nActualTimespan < nTargetTimespanLocal/4)
-        nActualTimespan = nTargetTimespanLocal/4;
-    if (nActualTimespan > nTargetTimespanLocal*4)
-        nActualTimespan = nTargetTimespanLocal*4;
+    if (nActualTimespan < nTargetTimespan/4)
+        nActualTimespan = nTargetTimespan/4;
+    if (nActualTimespan > nTargetTimespan*4)
+        nActualTimespan = nTargetTimespan*4;
 
     // Retarget
     CBigNum bnNew;
     bnNew.SetCompact(pindexLast->nBits);
     bnNew *= nActualTimespan;
-    bnNew /= nTargetTimespanLocal;
+    bnNew /= nTargetTimespan;
 
     if (bnNew > bnProofOfWorkLimit)
         bnNew = bnProofOfWorkLimit;
 
     /// debug print
     printf("GetNextWorkRequired RETARGET\n");
-    printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespanLocal, nActualTimespan);
+    printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespan, nActualTimespan);
     printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
     printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 
@@ -2303,7 +2276,7 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
         CBigNum bnNewBlock;
         bnNewBlock.SetCompact(pblock->nBits);
         CBigNum bnRequired;
-        bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime, pcheckpoint->nHeight));
+        bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime));
 
         if (bnNewBlock > bnRequired)
         {
